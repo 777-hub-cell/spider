@@ -85,7 +85,7 @@ fun ExploreScreen(
         Row(Modifier.fillMaxWidth().heightIn(min=48.dp), verticalAlignment=Alignment.CenterVertically, horizontalArrangement=Arrangement.SpaceBetween) {
             Column {
                 Text("VISTORA",color=VistoraPalette.Text,fontSize=12.sp,fontWeight=FontWeight.Bold,letterSpacing=3.sp)
-                Text("Explore",color=VistoraPalette.Text,fontSize=30.sp,fontFamily=FontFamily.Serif,fontWeight=FontWeight.Medium)
+                Text("Explore titles",color=VistoraPalette.Text,fontSize=30.sp,fontFamily=FontFamily.Serif,fontWeight=FontWeight.Medium)
             }
             Row(verticalAlignment=Alignment.CenterVertically) {
                 Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).clickable { onRefresh() },contentAlignment=Alignment.Center) {
