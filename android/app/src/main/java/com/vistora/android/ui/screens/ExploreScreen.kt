@@ -72,7 +72,7 @@ fun ExploreScreen(
     val fallback = remember(alreadyAdded) {
         starterPicks.map { it.asCatalogResult() }.filter { (it.type to it.title.lowercase()) !in alreadyAdded }
     }
-    val catalogue = if (available.isNotEmpty()) available else fallback
+    val catalogue = (available + fallback.filterNot { starter -> available.any { it.type == starter.type && it.title.equals(starter.title,true) } }).distinctBy { it.type to it.title.lowercase() }
     val ranked = remember(catalogue, library) { RecommendationEngine.rank(catalogue, library) }
     val searchResults = remember(searchState.results, selectedType, alreadyAdded) {
         searchState.results.filter { (selectedType == null || it.type == selectedType) && (it.type to it.title.lowercase()) !in alreadyAdded }
@@ -156,14 +156,14 @@ fun ExploreScreen(
                     }
                 }
                 if (library.isNotEmpty() && ranked.isNotEmpty()) item { Shelf("Picked for you",ranked.take(12),onOpenTitle) }
-                if (available.isEmpty() && fallback.isNotEmpty()) item { Shelf("Starter picks",ranked.take(12),onOpenTitle) }
+                if (fallback.isNotEmpty()) item { Shelf("Starter picks",fallback.take(12),onOpenTitle) }
                 if (topGenre != null) {
                     val genrePicks = ranked.filter { result -> result.genres.any { it.equals(topGenre,true) } }
                     if (genrePicks.isNotEmpty()) item { Shelf("Because you like " + topGenre,genrePicks.take(12),onOpenTitle) }
                 }
                 if (available.isNotEmpty()) {
                     MediaType.entries.forEach { type ->
-                        val titles = catalogue.filter { it.type == type }
+                        val titles = available.filter { it.type == type }
                         if (titles.isNotEmpty()) item { Shelf("Popular " + type.category,titles.take(12),onOpenTitle) }
                     }
                 }
@@ -176,10 +176,19 @@ fun ExploreScreen(
                             VistoraAction("Try again",onRefresh,Modifier.fillMaxWidth().padding(top=12.dp))
                         }
                     }
+                } else if (discoveryState.error != null) {
+                    item { Text("Live catalogue is unavailable right now. Starter picks are still here, and your library stays on this device.",color=VistoraPalette.Muted,fontSize=11.sp,lineHeight=16.sp) }
                 } else if (!tmdbConfigured) {
-                    item { Text("Anime discovery works without a TMDB key. Connect TMDB in Settings to add live movie and TV recommendations.",color=VistoraPalette.Muted,fontSize=11.sp,lineHeight=16.sp) }
+                    item { Text("Anime discovery works without a TMDB key. Add a free TMDB developer key in Settings for live movie and TV shelves.",color=VistoraPalette.Muted,fontSize=11.sp,lineHeight=16.sp) }
                 }
-                if (discoveryState.isLoading && catalogue.isEmpty()) item { Box(Modifier.fillMaxWidth().padding(24.dp),contentAlignment=Alignment.Center) { CircularProgressIndicator(color=VistoraPalette.Rose) } }
+                item {
+                    Text(
+                        if (library.isEmpty()) "Your feed becomes more personal as you add, rate and track titles. Your taste profile is calculated on this device."
+                        else "Your recommendations are calculated on this device from your ratings, watch progress and library statuses.",
+                        color=VistoraPalette.Muted,fontSize=11.sp,lineHeight=16.sp
+                    )
+                }
+                if (discoveryState.isLoading && available.isEmpty()) item { Box(Modifier.fillMaxWidth().padding(24.dp),contentAlignment=Alignment.Center) { CircularProgressIndicator(color=VistoraPalette.Rose) } }
             }
         }
     }
