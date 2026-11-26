@@ -107,7 +107,7 @@ fun HomeScreen(
                 style = TextStyle(fontFamily = FontFamily.Serif, fontSize = 24.sp, fontWeight = FontWeight.Medium)
             )
             Text(
-                "Open Discover",
+                "Explore titles",
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .clickable(role = Role.Button, onClick = onDiscover)
