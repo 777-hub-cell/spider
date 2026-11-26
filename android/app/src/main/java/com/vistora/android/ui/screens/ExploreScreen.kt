@@ -156,13 +156,16 @@ fun ExploreScreen(
                     }
                 }
                 if (library.isNotEmpty() && ranked.isNotEmpty()) item { Shelf("Picked for you",ranked.take(12),onOpenTitle) }
+                if (available.isEmpty() && fallback.isNotEmpty()) item { Shelf("Starter picks",ranked.take(12),onOpenTitle) }
                 if (topGenre != null) {
                     val genrePicks = ranked.filter { result -> result.genres.any { it.equals(topGenre,true) } }
                     if (genrePicks.isNotEmpty()) item { Shelf("Because you like " + topGenre,genrePicks.take(12),onOpenTitle) }
                 }
-                MediaType.entries.forEach { type ->
-                    val titles = catalogue.filter { it.type == type }
-                    if (titles.isNotEmpty()) item { Shelf("Popular " + type.category,titles.take(12),onOpenTitle) }
+                if (available.isNotEmpty()) {
+                    MediaType.entries.forEach { type ->
+                        val titles = catalogue.filter { it.type == type }
+                        if (titles.isNotEmpty()) item { Shelf("Popular " + type.category,titles.take(12),onOpenTitle) }
+                    }
                 }
                 if (catalogue.isEmpty() && !discoveryState.isLoading) {
                     item {
