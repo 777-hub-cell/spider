@@ -63,6 +63,8 @@ fun VistoraIcon(
         val sw = strokeWidth.dp.toPx()
         when(name) {
             "search" -> { circle(.44f,.43f,.27f); line(.64f to .64f,.84f to .84f) }
+            "arrow-right" -> { line(.16f to .5f,.84f to .5f); line(.58f to .22f,.84f to .5f); line(.58f to .78f,.84f to .5f) }
+            "refresh" -> { drawArc(tint,45f,285f,false,p(.14f,.14f),Size(.72f*s,.72f*s),style=Stroke(sw)); line(.69f to .15f,.85f to .15f); line(.85f to .15f,.85f to .32f) }
             "back" -> { line(.82f to .50f,.18f to .50f); line(.18f to .50f,.47f to .21f); line(.18f to .50f,.47f to .79f) }
             "more" -> { circle(.5f,.2f,.055f,true);circle(.5f,.5f,.055f,true);circle(.5f,.8f,.055f,true) }
             "plus" -> { line(.5f to .18f,.5f to .82f);line(.18f to .5f,.82f to .5f) }
@@ -415,7 +417,7 @@ fun VistoraBottomBar(
     val destinations = listOf(
         Triple("Home","home","Home"),
         Triple("Library","library","Library"),
-        Triple("Discover","discover","Discover"),
+        Triple("Explore","discover","Discover"),
         Triple("Stats","stats","Stats"),
         Triple("More","settings","Settings")
     )
