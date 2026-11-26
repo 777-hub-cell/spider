@@ -186,7 +186,7 @@ fun LibraryScreen(
                             style = androidx.compose.ui.text.TextStyle(fontFamily = FontFamily.Serif, fontSize = 24.sp, fontWeight = FontWeight.Medium)
                         )
                         Text(
-                            if (items.isEmpty()) "Add the first title you are watching, or pick something in Discover."
+                            if (items.isEmpty()) "Add the first title you are watching, or pick something in Explore."
                             else "Nothing in your library fits these filters.",
                             color = VistoraPalette.Muted, fontSize = 13.sp, lineHeight = 19.sp
                         )
