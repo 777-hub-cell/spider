@@ -53,11 +53,17 @@ fun ExploreScreen(
     var query by rememberSaveable { mutableStateOf("") }
     var selectedType by rememberSaveable(initialTypeFilter) { mutableStateOf(initialTypeFilter) }
     val alreadyAdded = remember(library) { library.map { it.type to it.title.lowercase() }.toSet() }
-    val available = remember(discoveryState.results, alreadyAdded) {
-        discoveryState.results.filter { (it.type to it.title.lowercase()) !in alreadyAdded }
+    val available = remember(discoveryState.results, alreadyAdded, selectedType) {
+        discoveryState.results.filter {
+            (selectedType == null || it.type == selectedType) &&
+                (it.type to it.title.lowercase()) !in alreadyAdded
+        }
     }
-    val fallback = remember(alreadyAdded) {
-        StarterCatalogue.results.filter { (it.type to it.title.lowercase()) !in alreadyAdded }
+    val fallback = remember(alreadyAdded, selectedType) {
+        StarterCatalogue.results.filter {
+            (selectedType == null || it.type == selectedType) &&
+                (it.type to it.title.lowercase()) !in alreadyAdded
+        }
     }
     val catalogue = (available + fallback.filterNot { starter -> available.any { it.type == starter.type && it.title.equals(starter.title,true) } }).distinctBy { it.type to it.title.lowercase() }
     val ranked = remember(catalogue, library) { RecommendationEngine.rank(catalogue, library) }
@@ -94,6 +100,8 @@ fun ExploreScreen(
                     VistoraIcon("arrow-right",Modifier.size(18.dp),VistoraPalette.Rose)
                 }
             }
+        }
+        if (searchVisible || selectedType != null) {
             Row(Modifier.fillMaxWidth().padding(top=7.dp).horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)) {
                 TypeChip("All",selectedType==null){selectedType=null}
                 MediaType.entries.forEach { type -> TypeChip(type.category,selectedType==type){selectedType=type} }

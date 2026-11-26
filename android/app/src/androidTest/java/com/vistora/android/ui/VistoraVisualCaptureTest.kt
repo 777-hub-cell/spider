@@ -55,7 +55,7 @@ class VistoraVisualCaptureTest {
         compose.waitForIdle()
         capture("08-settings")
 
-        compose.onNodeWithText("My Notes", substring = true).performScrollTo().performClick()
+        compose.onNodeWithText("My notes", substring = true, ignoreCase = true).performClick()
         compose.waitForIdle()
         capture("09-my-notes")
     }
