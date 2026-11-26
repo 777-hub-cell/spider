@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.vistora.android.data.repository.LibraryRepository
 import com.vistora.android.data.catalog.CatalogRepository
+import com.vistora.android.data.catalog.CatalogDiscoveryRepository
 import com.vistora.android.domain.CatalogResult
 import com.vistora.android.domain.CatalogSearchState
 import com.vistora.android.domain.EpisodeNote
@@ -26,12 +27,14 @@ data class VistoraUiState(
     val notesForMediaId: Long? = null,
     val isLoading: Boolean = true,
     val message: String? = null,
-    val catalog: CatalogSearchState = CatalogSearchState()
+    val catalog: CatalogSearchState = CatalogSearchState(),
+    val discovery: CatalogSearchState = CatalogSearchState()
 )
 
 class VistoraViewModel(
     private val repository: LibraryRepository,
-    private val catalogRepository: CatalogRepository = CatalogRepository()
+    private val catalogRepository: CatalogRepository = CatalogRepository(),
+    private val discoveryRepository: CatalogDiscoveryRepository = CatalogDiscoveryRepository()
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(VistoraUiState())
     val uiState: StateFlow<VistoraUiState> = _uiState.asStateFlow()
@@ -206,6 +209,23 @@ class VistoraViewModel(
                 updatedAt = now
             )
         )
+    }
+
+    fun loadDiscovery(tmdbCredential: String?, forceRefresh: Boolean = false) {
+        val current = _uiState.value.discovery
+        if (current.isLoading || (!forceRefresh && current.results.isNotEmpty())) return
+        _uiState.update { it.copy(discovery = CatalogSearchState(isLoading = true)) }
+        viewModelScope.launch {
+            runCatching { discoveryRepository.load(tmdbCredential) }
+                .onSuccess { results ->
+                    _uiState.update { it.copy(discovery = CatalogSearchState(results = results)) }
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(discovery = CatalogSearchState(error = error.message ?: "Discovery is temporarily unavailable."))
+                    }
+                }
+        }
     }
 
     fun searchCatalog(query: String, type: MediaType?, tmdbCredential: String?) {
