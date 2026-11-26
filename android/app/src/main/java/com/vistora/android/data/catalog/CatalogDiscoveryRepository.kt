@@ -17,7 +17,7 @@ class CatalogDiscoveryRepository {
         val credential = tmdbCredential?.trim().orEmpty()
         if (credential.isNotBlank()) {
             listOf(MediaType.MOVIE, MediaType.K_DRAMA, MediaType.TV_SERIES).forEach { type ->
-                runCatching { discoverTmdb(type, credential) }.onSuccess(results::addAll)
+                runCatching { discoverTmdb(type, credential) }.onSuccess { results.addAll(it) }
             }
         }
         val unique = results.distinctBy { it.providerId }
