@@ -30,7 +30,7 @@ class VistoraVisualCaptureTest {
         compose.waitForIdle()
         capture("02-library-empty")
 
-        compose.onNodeWithText("Add your first title").performClick()
+        compose.onNodeWithText("Add a title").performClick()
         compose.waitForIdle()
         capture("03-add-title")
 
@@ -43,7 +43,7 @@ class VistoraVisualCaptureTest {
         compose.waitForIdle()
         capture("05-library-with-title")
 
-        compose.onNodeWithText("Discover", useUnmergedTree = true).performClick()
+        compose.onNodeWithText("Explore", useUnmergedTree = true).performClick()
         compose.waitForIdle()
         capture("06-discover")
 
