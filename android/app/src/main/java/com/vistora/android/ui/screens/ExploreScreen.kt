@@ -28,27 +28,12 @@ import com.vistora.android.domain.CatalogSearchState
 import com.vistora.android.domain.MediaItem
 import com.vistora.android.domain.MediaType
 import com.vistora.android.domain.RecommendationEngine
-import com.vistora.android.domain.SeriesState
+import com.vistora.android.domain.StarterCatalogue
 import com.vistora.android.ui.components.PosterArt
 import com.vistora.android.ui.components.VistoraAction
 import com.vistora.android.ui.components.VistoraIcon
 import com.vistora.android.ui.components.VistoraTextField
 import com.vistora.android.ui.theme.VistoraPalette
-
-private val starterPicks = listOf(
-    MediaItem(title="Spirited Away",type=MediaType.ANIME,releaseYear=2001,genres=listOf("Fantasy","Adventure"),synopsis="A young girl enters a mysterious world of spirits."),
-    MediaItem(title="Interstellar",type=MediaType.MOVIE,releaseYear=2014,genres=listOf("Science Fiction","Drama"),synopsis="A crew searches for a new home beyond Earth."),
-    MediaItem(title="Crash Landing on You",type=MediaType.K_DRAMA,releaseYear=2019,totalEpisodes=16,seriesState=SeriesState.COMPLETED,genres=listOf("Romance","Drama")),
-    MediaItem(title="Stranger Things",type=MediaType.TV_SERIES,releaseYear=2016,totalEpisodes=34,seriesState=SeriesState.ONGOING,genres=listOf("Mystery","Science Fiction")),
-    MediaItem(title="Your Name",type=MediaType.ANIME,releaseYear=2016,genres=listOf("Romance","Fantasy")),
-    MediaItem(title="The Bear",type=MediaType.TV_SERIES,releaseYear=2022,totalEpisodes=28,seriesState=SeriesState.ONGOING,genres=listOf("Comedy","Drama")),
-    MediaItem(title="My Mister",type=MediaType.K_DRAMA,releaseYear=2018,totalEpisodes=16,seriesState=SeriesState.COMPLETED,genres=listOf("Drama")),
-    MediaItem(title="Parasite",type=MediaType.MOVIE,releaseYear=2019,genres=listOf("Thriller","Drama")),
-    MediaItem(title="Knives Out",type=MediaType.MOVIE,releaseYear=2019,genres=listOf("Comedy","Mystery","Thriller")),
-    MediaItem(title="Mob Psycho 100",type=MediaType.ANIME,releaseYear=2016,totalEpisodes=37,genres=listOf("Comedy","Action","Fantasy")),
-    MediaItem(title="Hospital Playlist",type=MediaType.K_DRAMA,releaseYear=2020,totalEpisodes=24,genres=listOf("Comedy","Drama")),
-    MediaItem(title="Brooklyn Nine-Nine",type=MediaType.TV_SERIES,releaseYear=2013,totalEpisodes=153,genres=listOf("Comedy","Crime"))
-)
 
 @Composable
 fun ExploreScreen(
@@ -60,17 +45,19 @@ fun ExploreScreen(
     onRefresh: () -> Unit,
     onSearch: (String, MediaType?) -> Unit,
     onClearSearch: () -> Unit,
-    onOpenTitle: (CatalogResult) -> Unit
+    onOpenTitle: (CatalogResult) -> Unit,
+    initialTypeFilter: MediaType? = null,
+    startInSearch: Boolean = false
 ) {
-    var searchVisible by rememberSaveable { mutableStateOf(false) }
+    var searchVisible by rememberSaveable(startInSearch) { mutableStateOf(startInSearch) }
     var query by rememberSaveable { mutableStateOf("") }
-    var selectedType by rememberSaveable { mutableStateOf<MediaType?>(null) }
+    var selectedType by rememberSaveable(initialTypeFilter) { mutableStateOf(initialTypeFilter) }
     val alreadyAdded = remember(library) { library.map { it.type to it.title.lowercase() }.toSet() }
     val available = remember(discoveryState.results, alreadyAdded) {
         discoveryState.results.filter { (it.type to it.title.lowercase()) !in alreadyAdded }
     }
     val fallback = remember(alreadyAdded) {
-        starterPicks.map { it.asCatalogResult() }.filter { (it.type to it.title.lowercase()) !in alreadyAdded }
+        StarterCatalogue.results.filter { (it.type to it.title.lowercase()) !in alreadyAdded }
     }
     val catalogue = (available + fallback.filterNot { starter -> available.any { it.type == starter.type && it.title.equals(starter.title,true) } }).distinctBy { it.type to it.title.lowercase() }
     val ranked = remember(catalogue, library) { RecommendationEngine.rank(catalogue, library) }
@@ -232,7 +219,3 @@ private fun TypeChip(label:String,selected:Boolean,onClick:()->Unit) {
         color=if(selected)VistoraPalette.OnAccent else VistoraPalette.Secondary,fontSize=12.sp,fontWeight=FontWeight.Medium)
 }
 
-private fun MediaItem.asCatalogResult() = CatalogResult(
-    providerId="starter:$title",title=title,type=type,releaseYear=releaseYear,totalEpisodes=totalEpisodes,
-    seriesState=seriesState,synopsis=synopsis,genres=genres,posterUrl=posterPath,source="VISTORA starter picks"
-)

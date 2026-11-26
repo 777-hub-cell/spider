@@ -71,9 +71,12 @@ fun VistoraApp(viewModel: VistoraViewModel) {
         val stored = TmdbCredentialVault.read(context)
         tmdbCredential = stored
         tmdbConfigured = !stored.isNullOrBlank()
+        viewModel.loadDiscovery(stored)
     }
 
     var route by rememberSaveable { mutableStateOf("Home") }
+    var exploreInitialType by remember { mutableStateOf<MediaType?>(null) }
+    var exploreStartInSearch by rememberSaveable { mutableStateOf(false) }
     var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
     var selectedCatalogResult by remember { mutableStateOf<CatalogResult?>(null) }
     var detailReturnRoute by rememberSaveable { mutableStateOf("Library") }
@@ -149,13 +152,31 @@ fun VistoraApp(viewModel: VistoraViewModel) {
                 when (route) {
                     "Home" -> HomeScreen(
                         items = uiState.items,
-                        onSearch = { route = "Discover" },
-                        onDiscover = { route = "Discover" },
+                        discoveryState = uiState.discovery,
+                        tmdbConfigured = tmdbConfigured,
+                        onSearch = {
+                            exploreInitialType = null
+                            exploreStartInSearch = true
+                            viewModel.clearCatalogSearch()
+                            route = "Discover"
+                        },
+                        onDiscover = {
+                            exploreInitialType = null
+                            exploreStartInSearch = false
+                            route = "Discover"
+                        },
                         onNotifications = { notificationsVisible = true },
+                        onRefresh = { viewModel.loadDiscovery(tmdbCredential, forceRefresh = true) },
                         onOpenTitle = { detailReturnRoute = "Home"; episodeToOpen = null; selectedId = it; route = "Title Details" },
+                        onOpenCatalogTitle = { result ->
+                            selectedCatalogResult = result
+                            detailReturnRoute = "Home"
+                            route = "Catalog Details"
+                        },
                         onOpenCategory = { type ->
-                            filters = LibraryFilters(types = setOf(type))
-                            route = "Library"
+                            exploreInitialType = type
+                            exploreStartInSearch = false
+                            route = "Discover"
                         },
                         onOpenStatus = { status ->
                             filters = LibraryFilters(statuses = setOf(status))
@@ -190,23 +211,24 @@ fun VistoraApp(viewModel: VistoraViewModel) {
                             selectedCatalogResult = result
                             detailReturnRoute = "Discover"
                             route = "Catalog Details"
-                        }
+                        },
+                        initialTypeFilter = exploreInitialType,
+                        startInSearch = exploreStartInSearch
                     )
                     "Catalog Details" -> {
                         val result = selectedCatalogResult
                         if (result == null) {
-                            VistoraAction("Back to Explore", { route = "Discover" }, Modifier.padding(24.dp))
+                            VistoraAction("Back", { route = detailReturnRoute }, Modifier.padding(24.dp))
                         } else {
                             CatalogDetailsScreen(
                                 result = result,
-                                onBack = { selectedCatalogResult = null; route = "Discover" },
+                                onBack = { selectedCatalogResult = null; route = detailReturnRoute },
                                 onAddToLibrary = {
                                     scope.launch {
                                         val localPoster = result.posterUrl?.let { PosterDownloader.cache(context, it) }
                                         viewModel.saveItem(result.toDraft().copy(posterPath = localPoster ?: result.posterUrl)) { id ->
                                             selectedId = id
                                             selectedCatalogResult = null
-                                            detailReturnRoute = "Discover"
                                             route = "Title Details"
                                         }
                                     }
@@ -287,7 +309,13 @@ fun VistoraApp(viewModel: VistoraViewModel) {
                 }
             }
             if (route != "Title Details" && route != "Catalog Details" && route != "My Notes") {
-                VistoraBottomBar(selected = route, onSelect = { route = it })
+                VistoraBottomBar(selected = route, onSelect = {
+                    if (it != "Discover") {
+                        exploreInitialType = null
+                        exploreStartInSearch = false
+                    }
+                    route = it
+                })
             }
         }
 

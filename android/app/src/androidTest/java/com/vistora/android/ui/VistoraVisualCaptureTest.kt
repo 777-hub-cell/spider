@@ -51,7 +51,7 @@ class VistoraVisualCaptureTest {
         compose.waitForIdle()
         capture("07-stats")
 
-        compose.onNodeWithText("Settings", useUnmergedTree = true).performClick()
+        compose.onNodeWithText("More", useUnmergedTree = true).performClick()
         compose.waitForIdle()
         capture("08-settings")
 

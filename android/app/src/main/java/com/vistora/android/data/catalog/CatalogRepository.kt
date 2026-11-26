@@ -110,7 +110,8 @@ class CatalogRepository {
                     synopsis = item.optString("overview").take(600),
                     genres = genreNames,
                     posterUrl = posterPath?.let { "https://image.tmdb.org/t/p/w500$it" },
-                    source = "TMDB"
+                    source = "TMDB",
+                    rating = item.optDouble("vote_average").takeIf { it > 0.0 }
                 )
             }
         } finally {
@@ -145,6 +146,7 @@ class CatalogRepository {
                   status
                   startDate { year }
                   description(asHtml: false)
+                  averageScore
                   genres
                   coverImage { large }
                 }
@@ -207,7 +209,8 @@ class CatalogRepository {
                     synopsis = item.optString("description").replace(Regex("<[^>]*>"), "").take(600),
                     genres = genres,
                     posterUrl = poster,
-                    source = "AniList"
+                    source = "AniList",
+                    rating = item.optDouble("averageScore").takeIf { it > 0.0 }?.div(10.0)
                 )
             }
         } finally {

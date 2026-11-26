@@ -10,7 +10,8 @@ data class CatalogResult(
     val synopsis: String,
     val genres: List<String>,
     val posterUrl: String?,
-    val source: String
+    val source: String,
+    val rating: Double? = null
 ) {
     fun toDraft(): MediaItem = MediaItem(
         title = title,
