@@ -40,7 +40,8 @@ import com.vistora.android.ui.components.VistoraBottomBar
 import com.vistora.android.ui.components.VistoraIcon
 import com.vistora.android.ui.components.VistoraSheet
 import com.vistora.android.ui.screens.AllNotesScreen
-import com.vistora.android.ui.screens.DiscoverScreen
+import com.vistora.android.ui.screens.ExploreScreen
+import com.vistora.android.ui.screens.CatalogDetailsScreen
 import com.vistora.android.ui.screens.HomeScreen
 import com.vistora.android.ui.screens.LibraryFilters
 import com.vistora.android.ui.screens.LibraryScreen
@@ -74,6 +75,7 @@ fun VistoraApp(viewModel: VistoraViewModel) {
 
     var route by rememberSaveable { mutableStateOf("Home") }
     var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var selectedCatalogResult by remember { mutableStateOf<CatalogResult?>(null) }
     var detailReturnRoute by rememberSaveable { mutableStateOf("Library") }
     var episodeToOpen by rememberSaveable { mutableStateOf<Int?>(null) }
     var editorVisible by rememberSaveable { mutableStateOf(false) }
@@ -125,7 +127,7 @@ fun VistoraApp(viewModel: VistoraViewModel) {
         }
     }
 
-    BackHandler(enabled = route == "Title Details" || route == "My Notes" || editorVisible || filtersVisible || gridVisible || sortVisible || notificationsVisible || resetVisible) {
+    BackHandler(enabled = route == "Title Details" || route == "Catalog Details" || route == "My Notes" || editorVisible || filtersVisible || gridVisible || sortVisible || notificationsVisible || resetVisible) {
         when {
             editorVisible -> editorVisible = false
             filtersVisible -> filtersVisible = false
@@ -175,22 +177,43 @@ fun VistoraApp(viewModel: VistoraViewModel) {
                         },
                         onFiltersChange = { filters = it }
                     )
-                    "Discover" -> DiscoverScreen(
+                    "Discover" -> ExploreScreen(
                         library = uiState.items,
+                        discoveryState = uiState.discovery,
                         searchState = uiState.catalog,
                         tmdbConfigured = tmdbConfigured,
+                        onLoad = { viewModel.loadDiscovery(tmdbCredential) },
+                        onRefresh = { viewModel.loadDiscovery(tmdbCredential, forceRefresh = true) },
                         onSearch = { query, type -> viewModel.searchCatalog(query, type, tmdbCredential) },
                         onClearSearch = viewModel::clearCatalogSearch,
-                        onAdd = { result: CatalogResult ->
+                        onOpenTitle = { result ->
+                            selectedCatalogResult = result
                             detailReturnRoute = "Discover"
-                            episodeToOpen = null
-                            scope.launch {
-                                val localPoster = result.posterUrl?.let { PosterDownloader.cache(context, it) }
-                                editorInitial = result.toDraft().copy(posterPath = localPoster ?: result.posterUrl)
-                                editorVisible = true
-                            }
+                            route = "Catalog Details"
                         }
                     )
+                    "Catalog Details" -> {
+                        val result = selectedCatalogResult
+                        if (result == null) {
+                            VistoraAction("Back to Explore", { route = "Discover" }, Modifier.padding(24.dp))
+                        } else {
+                            CatalogDetailsScreen(
+                                result = result,
+                                onBack = { selectedCatalogResult = null; route = "Discover" },
+                                onAddToLibrary = {
+                                    scope.launch {
+                                        val localPoster = result.posterUrl?.let { PosterDownloader.cache(context, it) }
+                                        viewModel.saveItem(result.toDraft().copy(posterPath = localPoster ?: result.posterUrl)) { id ->
+                                            selectedId = id
+                                            selectedCatalogResult = null
+                                            detailReturnRoute = "Discover"
+                                            route = "Title Details"
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    }
                     "Stats" -> StatsScreen(items = uiState.items)
                     "My Notes" -> AllNotesScreen(
                         items = uiState.items,
@@ -217,6 +240,7 @@ fun VistoraApp(viewModel: VistoraViewModel) {
                                     .onSuccess {
                                         tmdbCredential = value.trim()
                                         tmdbConfigured = true
+                                        viewModel.loadDiscovery(value.trim(), forceRefresh = true)
                                         viewModel.showMessage("TMDB credential saved securely")
                                     }
                                     .onFailure { viewModel.showMessage(it.message ?: "Couldn't save the credential") }
@@ -227,6 +251,7 @@ fun VistoraApp(viewModel: VistoraViewModel) {
                                 TmdbCredentialVault.clear(context)
                                 tmdbCredential = null
                                 tmdbConfigured = false
+                                viewModel.loadDiscovery(null, forceRefresh = true)
                                 viewModel.showMessage("TMDB credential removed")
                             }
                         },
@@ -261,7 +286,7 @@ fun VistoraApp(viewModel: VistoraViewModel) {
                     }
                 }
             }
-            if (route != "Title Details" && route != "My Notes") {
+            if (route != "Title Details" && route != "Catalog Details" && route != "My Notes") {
                 VistoraBottomBar(selected = route, onSelect = { route = it })
             }
         }
