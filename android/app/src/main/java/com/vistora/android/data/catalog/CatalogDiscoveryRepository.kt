@@ -13,7 +13,7 @@ import java.net.URL
 class CatalogDiscoveryRepository {
     suspend fun load(tmdbCredential: String?): List<CatalogResult> = withContext(Dispatchers.IO) {
         val results = mutableListOf<CatalogResult>()
-        runCatching { discoverAnime() }.onSuccess(results::addAll)
+        runCatching { discoverAnime() }.onSuccess { results.addAll(it) }
         val credential = tmdbCredential?.trim().orEmpty()
         if (credential.isNotBlank()) {
             listOf(MediaType.MOVIE, MediaType.K_DRAMA, MediaType.TV_SERIES).forEach { type ->
